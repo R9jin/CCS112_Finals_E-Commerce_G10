@@ -16,8 +16,16 @@ function CategoryPage() {
   const [priceRange, setPriceRange] = useState("all");
   const [minRating, setMinRating] = useState("all");
 
+  // Filter and sort helper function
   const filterAndSort = (list) => {
     let filtered = [...list];
+
+    // Convert numeric strings to numbers
+    filtered = filtered.map((p) => ({
+      ...p,
+      price: Number(p.price),
+      rating: Number(p.rating),
+    }));
 
     if (priceRange !== "all") {
       const [min, max] = priceRange.split("-").map(Number);
@@ -40,12 +48,14 @@ function CategoryPage() {
   };
 
   const categories = [
-    { id: "appetizers", title: "APPETIZERS", items: filterAndSort(products.filter((p) => p.category === "Appetizer")) },
-    { id: "main-course", title: "MAIN COURSE", items: filterAndSort(products.filter((p) => p.category === "Main")) },
-    { id: "desserts", title: "DESSERTS", items: filterAndSort(products.filter((p) => p.category === "Dessert")) },
+    { id: "appetizers", title: "APPETIZERS", items: filterAndSort(products.filter((p) => p.category === "Appetizers")) },
+    { id: "main-course", title: "MAIN COURSE", items: filterAndSort(products.filter((p) => p.category === "Main Course")) },
+    { id: "desserts", title: "DESSERTS", items: filterAndSort(products.filter((p) => p.category === "Desserts")) },
     { id: "street-foods", title: "STREET FOODS", items: filterAndSort(products.filter((p) => p.category === "Street Food")) },
     { id: "drinks", title: "DRINKS", items: filterAndSort(products.filter((p) => p.category === "Drinks")) },
   ];
+
+
 
   return (
     <main className={styles.homepage}>
@@ -90,8 +100,8 @@ function CategoryPage() {
           <div className={styles.productList}>
             {cat.items.map((item) => (
               <React.Fragment key={item.id}>
-                <ProductCard product={item} />
-                <ProductCard product={item} />
+                <ProductCard product={{ ...item, image: item.image_url }} />
+                <ProductCard product={{ ...item, image: item.image_url }} />
               </React.Fragment>
             ))}
           </div>

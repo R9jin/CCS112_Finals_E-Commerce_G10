@@ -8,33 +8,48 @@ export const ProductsProvider = ({ children }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch products from API when component mounts
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/products`);
-        const data = await res.json();
-        setProducts(data);
-      } catch (err) {
-        console.error("Failed to fetch products:", err);
-        setProducts([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Fetch all products across all paginated pages
+  const fetchAllProducts = async () => {
+    try {
+      let allProducts = [];
+      let page = 1;
+      let totalPages = 1;
 
-    fetchProducts();
+      do {
+        const res = await fetch(`${API_BASE_URL}/products?page=${page}`);
+        const json = await res.json();
+
+        // Convert price and rating to numbers
+        const productArray = Array.isArray(json.data?.data)
+          ? json.data.data.map(p => ({
+              ...p,
+              price: Number(p.price),
+              rating: Number(p.rating),
+            }))
+          : [];
+
+        allProducts = [...allProducts, ...productArray];
+        totalPages = json.data?.last_page || 1;
+        page++;
+      } while (page <= totalPages);
+
+      setProducts(allProducts);
+      console.log("Loaded all products:", allProducts);
+    } catch (err) {
+      console.error("Failed to fetch products:", err);
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllProducts();
   }, []);
 
-  // Optionally: function to refresh products from API
   const refreshProducts = async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/products`);
-      const data = await res.json();
-      setProducts(data);
-    } catch (err) {
-      console.error("Failed to refresh products:", err);
-    }
+    setLoading(true);
+    await fetchAllProducts();
   };
 
   return (
