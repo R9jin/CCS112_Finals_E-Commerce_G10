@@ -53,7 +53,7 @@ function ProductCard({ product }) {
     <div className={styles.productCard}>
       <div className={styles.productImage}>
         <Link to={`/product/${product.id}`}>
-          <img src={product.image} alt={product.name} />
+          <img src={process.env.PUBLIC_URL + product.image_url} alt={product.name} />
         </Link>
       </div>
 

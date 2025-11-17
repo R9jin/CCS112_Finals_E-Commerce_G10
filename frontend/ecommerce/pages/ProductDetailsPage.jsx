@@ -1,15 +1,23 @@
-import { useParams } from "react-router-dom"; // For accessing URL parameters
-import products from "../data/products.json"; // Static product data
-import ProductDetails from "../components/ProductDetails"; // Component to display product info
+import { useParams } from "react-router-dom";
+import { useContext } from "react";
+import { ProductsContext } from "../context/ProductsContext";
+import ProductDetails from "../components/ProductDetails";
 
 function ProductDetailsPage() {
-  // Extract the "id" parameter from the URL
   const { id } = useParams();
+  const { products, loading } = useContext(ProductsContext);
 
-  // Find the product in the JSON data that matches the URL ID
-  const product = products.find((p) => p.id === id);
+  if (loading) {
+    return (
+      <h2 style={{ textAlign: "center", marginTop: "50px" }}>
+        Loading product...
+      </h2>
+    );
+  }
 
-  // If no matching product is found, show a "not found" message
+  // Normalize the product ID type (Laravel might return numeric or string)
+  const product = products.find((p) => String(p.id) === String(id));
+
   if (!product) {
     return (
       <h2 style={{ textAlign: "center", marginTop: "50px" }}>
@@ -18,8 +26,7 @@ function ProductDetailsPage() {
     );
   }
 
-  // Render the ProductDetails component with the found product
-  return <ProductDetails product={product} />;
+  return <ProductDetails product={{ ...product, image: product.image_url }} />;
 }
 
 export default ProductDetailsPage;

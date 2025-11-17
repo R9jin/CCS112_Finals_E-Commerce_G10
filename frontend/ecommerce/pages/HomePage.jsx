@@ -5,7 +5,15 @@ import ProductCard from "../components/ProductCard";
 import styles from "../styles/HomePage.module.css";
 
 function HomePage() {
-  const { products } = useContext(ProductsContext);
+  const { products, loading } = useContext(ProductsContext);
+
+  // Show loading while products are fetching
+  if (loading) return <p>Loading products...</p>;
+
+  // Ensure products is an array
+  if (!Array.isArray(products) || products.length === 0) {
+    return <p>No products available.</p>;
+  }
 
   // Top 5 featured products (rating >= 4)
   const featured = products.filter((p) => p.rating >= 4).slice(0, 5);
@@ -13,6 +21,7 @@ function HomePage() {
   // Top 5 best sellers (sorted by sold)
   const bestSellers = [...products].sort((a, b) => b.sold - a.sold).slice(0, 5);
 
+  // Render each product twice (or remove duplicates if not needed)
   const renderProductDuplicates = (items) =>
     items.flatMap((item) => [
       <ProductCard key={item.id + "-1"} product={item} />,

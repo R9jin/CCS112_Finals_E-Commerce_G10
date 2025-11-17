@@ -1,7 +1,7 @@
 .productCard {
   flex: 0 0 auto;
   width: 220px; /* slightly wider for longer titles */
-  height: 330px; /* fixed height for consistent layout */
+  height: 380px; /* fixed height for consistent layout */
   border: 1px solid #e0e0e0;
   border-radius: 12px;
   padding: 1rem;
