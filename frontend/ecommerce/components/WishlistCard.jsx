@@ -1,4 +1,3 @@
-import React from "react";
 import styles from "../styles/WishlistCard.module.css";
 
 /**
@@ -10,16 +9,16 @@ import styles from "../styles/WishlistCard.module.css";
 function WishlistCard({ product, onRemove, onAddCart, onBuyNow }) {
   return (
     <div className={styles.wishlistCard}>
-      {/* Product image section */}
+      {/* Product image */}
       <div className={styles.wishlistImage}>
-        <img src={product.image} alt={product.name} />
+        <img src={process.env.PUBLIC_URL + product.image_url} alt={product.name} />
       </div>
 
-      {/* Product details section */}
+      {/* Product details */}
       <div className={styles.wishlistDetails}>
         <p><strong>{product.name}</strong></p>
         <p>{product.description}</p>
-        <p>{product.stock} item(s) left</p>
+        <p>{product.sold ?? 0} sold</p>
       </div>
 
       {/* Product price */}
@@ -27,24 +26,15 @@ function WishlistCard({ product, onRemove, onAddCart, onBuyNow }) {
 
       {/* Action buttons */}
       <div className={styles.wishlistActions}>
-        <button
-          className={styles.addCart}
-          onClick={() => onAddCart && onAddCart(product)}
-        >
+        <button className={styles.addCart} onClick={() => onAddCart(product)}>
           Add to Cart
         </button>
 
-        <button
-          className={styles.buyNow}
-          onClick={() => onBuyNow && onBuyNow(product)}
-        >
+        <button className={styles.buyNow} onClick={() => onBuyNow(product)}>
           Buy Now
         </button>
 
-        <button
-          className={styles.removeWishlist}
-          onClick={() => onRemove && onRemove(product)}
-        >
+        <button className={styles.removeWishlist} onClick={() => onRemove(product)}>
           Remove
         </button>
       </div>

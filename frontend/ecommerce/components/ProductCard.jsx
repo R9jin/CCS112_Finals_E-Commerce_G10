@@ -1,14 +1,14 @@
-import { useState, useContext } from "react";
+import { useContext, useState } from "react";
 import { Link } from "react-router-dom";
 import styles from "../styles/ProductCard.module.css";
 
-import starIcon from "../assets/star.png";
 import cartIcon from "../assets/cart.png";
 import heartIcon from "../assets/heart.png";
+import starIcon from "../assets/star.png";
 
+import { useAuth } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
 import { WishlistContext } from "../context/WishlistContext";
-import { useAuth } from "../context/AuthContext";
 
 function ProductCard({ product }) {
   const { addToCart } = useContext(CartContext);
@@ -17,14 +17,12 @@ function ProductCard({ product }) {
 
   const fullStars = Math.round(product.rating);
   const [showNotice, setShowNotice] = useState(false);
-  const isWishlisted = wishlistItems.includes(product.id);
+
+  // check if product is wishlisted
+  const isWishlisted = wishlistItems.includes(String(product.product_id));
 
   const handleAddToCart = async () => {
-    if (!isLoggedIn) {
-      alert("Please log in first to add items to your cart.");
-      return;
-    }
-
+    if (!isLoggedIn) return alert("Please log in first to add items to your cart.");
     try {
       await addToCart({ ...product, quantity: 1 });
       setShowNotice(true);
@@ -36,23 +34,17 @@ function ProductCard({ product }) {
   };
 
   const handleToggleWishlist = async () => {
-    if (!isLoggedIn) {
-      alert("Please log in first to manage your wishlist.");
-      return;
-    }
+    if (!isLoggedIn) return alert("Please log in first to manage your wishlist.");
 
-    try {
-      await toggleWishlist(product.id);
-    } catch (err) {
-      console.error("Failed to update wishlist:", err);
-      alert("Could not update wishlist. Try again.");
-    }
+    const success = await toggleWishlist(product.product_id);
+    if (!success) alert("Could not update wishlist. Try again.");
   };
+
 
   return (
     <div className={styles.productCard}>
       <div className={styles.productImage}>
-        <Link to={`/product/${product.id}`}>
+        <Link to={`/product/${product.product_id}`}>
           <img src={process.env.PUBLIC_URL + product.image_url} alt={product.name} />
         </Link>
       </div>
@@ -69,7 +61,7 @@ function ProductCard({ product }) {
           ))}
         </div>
 
-        <Link to={`/product/${product.id}`} className={styles.productName}>
+        <Link to={`/product/${product.product_id}`} className={styles.productName}>
           <h3>{product.name}</h3>
         </Link>
 

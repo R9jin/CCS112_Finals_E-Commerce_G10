@@ -14,13 +14,17 @@ Route::apiResource('tasks', TaskController::class);
 
 // Public product endpoints
 Route::resource('products', ProductController::class)->only(['index', 'show']);
-
 // Auth
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
+
+    Route::post('/products', [ProductController::class, 'store']);
+    Route::put('/products/{product}', [ProductController::class, 'update']);
+    Route::delete('/products/{product}', [ProductController::class, 'destroy']);
+
 
     // Wishlist
     Route::post('/wishlist', [WishlistController::class, 'store']);

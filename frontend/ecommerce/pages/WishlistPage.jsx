@@ -1,23 +1,32 @@
 import { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom"; // ✅ add this
+import { useNavigate } from "react-router-dom";
+import WishlistCard from "../components/WishlistCard";
 import { CartContext } from "../context/CartContext";
 import { WishlistContext } from "../context/WishlistContext";
-import WishlistCard from "../components/WishlistCard";
 import styles from "../styles/WishlistPage.module.css";
-import productsData from "../data/products.json";
 
 export default function WishListPage() {
   const { addToCart } = useContext(CartContext);
   const { wishlistItems, removeFromWishlist } = useContext(WishlistContext);
   const [allProducts, setAllProducts] = useState([]);
-  const navigate = useNavigate(); // ✅ hook for React Router navigation
+  const navigate = useNavigate();
 
   useEffect(() => {
-    setAllProducts(productsData);
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/products");
+        const data = await res.json();
+        setAllProducts(data);
+      } catch (err) {
+        console.error("Failed to fetch products:", err);
+        setAllProducts([]);
+      }
+    };
+    fetchProducts();
   }, []);
 
-  const wishlistProducts = allProducts.filter((p) =>
-    wishlistItems.includes(p.id)
+  const wishlistProducts = allProducts.filter(p =>
+    wishlistItems.some(i => i.productId === String(p.product_id))
   );
 
   const handleAddCart = (product) => {
@@ -27,7 +36,7 @@ export default function WishListPage() {
 
   const handleBuyNow = (product) => {
     addToCart({ ...product, quantity: 1 });
-    navigate("/checkout"); // ✅ navigate without reloading
+    navigate("/checkout");
   };
 
   return (
@@ -37,9 +46,9 @@ export default function WishListPage() {
       ) : (
         wishlistProducts.map((product) => (
           <WishlistCard
-            key={product.id}
+            key={product.product_id}
             product={product}
-            onRemove={() => removeFromWishlist(product.id)}
+            onRemove={() => removeFromWishlist(product.product_id)}
             onAddCart={() => handleAddCart(product)}
             onBuyNow={() => handleBuyNow(product)}
           />

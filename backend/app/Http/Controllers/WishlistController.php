@@ -17,11 +17,9 @@ class WishlistController extends Controller
         return response()->json($items);
     }
 
-    // Add product to wishlist
-    public function store(Request $request)
-    {
+    public function store(Request $request) {
         $request->validate([
-            'product_id' => 'required|exists:products,id',
+            'product_id' => 'required|exists:products,product_id', // <- use product_id column, not id
         ]);
 
         $exists = Wishlist::where('user_id', $request->user()->id)
@@ -39,6 +37,7 @@ class WishlistController extends Controller
 
         return response()->json($item, 201);
     }
+
 
     // Remove from wishlist
     public function destroy($id)

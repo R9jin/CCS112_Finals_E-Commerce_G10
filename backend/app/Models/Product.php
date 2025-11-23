@@ -9,14 +9,12 @@ class Product extends Model
 {
     use HasFactory;
 
-    protected $table = 'products';
-
     protected $fillable = [
         'product_id',
         'name',
         'category',
         'price',
-        'image_url', // updated to match migration
+        'image_url',
         'description',
         'rating',
         'stock',
@@ -24,7 +22,6 @@ class Product extends Model
         'wishlisted',
         'dateAdded',
     ];
-
     // Relationships
     public function wishlists()
     {

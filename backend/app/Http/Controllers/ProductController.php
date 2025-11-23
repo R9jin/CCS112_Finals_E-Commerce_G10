@@ -7,33 +7,21 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    /**
-     * GET /api/products
-     * List all products (public)
-     */
     public function index()
     {
-        // Optional: paginate for performance
-        $products = Product::paginate(10);
-
         return response()->json([
             'success' => true,
-            'data' => $products
+            'data' => Product::all()
         ]);
     }
 
-    /**
-     * POST /api/products
-     * Create a new product (admin only)
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'product_id' => 'required|string|unique:products,product_id',
             'name' => 'required|string|max:255',
             'category' => 'required|in:Appetizers,Main Course,Desserts,Street Food,Drinks',
             'price' => 'required|numeric',
-            'image_url' => 'nullable|url',
+            'image' => 'nullable|image|max:2048',
             'description' => 'nullable|string',
             'rating' => 'nullable|numeric|min:0|max:5',
             'stock' => 'required|integer',
@@ -42,39 +30,31 @@ class ProductController extends Controller
             'dateAdded' => 'nullable|date',
         ]);
 
+        $validated['product_id'] = 'P-' . uniqid();
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('products', 'public');
+            $validated['image_url'] = asset('storage/' . $path);
+        }
+
         $product = Product::create($validated);
 
-        return response()->json([
-            'success' => true,
-            'data' => $product
-        ], 201);
+        return response()->json(['success' => true, 'data' => $product], 201);
     }
 
-    /**
-     * GET /api/products/{id}
-     * Show a single product (public)
-     */
     public function show(Product $product)
     {
-        return response()->json([
-            'success' => true,
-            'data' => $product
-        ]);
+        return response()->json(['success' => true, 'data' => $product]);
     }
 
-    /**
-     * PUT /api/products/{id}
-     * Update a product (admin only)
-     */
     public function update(Request $request, Product $product)
     {
         $validated = $request->validate([
-            'product_id' => 'sometimes|string|unique:products,product_id,' . $product->id,
             'name' => 'sometimes|string|max:255',
             'category' => 'sometimes|in:Appetizers,Main Course,Desserts,Street Food,Drinks',
             'price' => 'sometimes|numeric',
-            'image_url' => 'sometimes|url|nullable',
-            'description' => 'sometimes|string|nullable',
+            'image' => 'sometimes|image|max:2048',
+            'description' => 'sometimes|string',
             'rating' => 'sometimes|numeric|min:0|max:5',
             'stock' => 'sometimes|integer',
             'sold' => 'sometimes|integer|min:0',
@@ -82,25 +62,19 @@ class ProductController extends Controller
             'dateAdded' => 'sometimes|date',
         ]);
 
-        $product->update($validated);
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('products', 'public');
+            $validated['image_url'] = asset('storage/' . $path);
+        }
 
-        return response()->json([
-            'success' => true,
-            'data' => $product
-        ]);
+        $product->update($validated);
+        $product->refresh();
+        return response()->json(['success' => true, 'data' => $product]);
     }
 
-    /**
-     * DELETE /api/products/{id}
-     * Delete a product (admin only)
-     */
     public function destroy(Product $product)
     {
         $product->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Product deleted successfully'
-        ]);
+        return response()->json(['success' => true, 'message' => 'Product deleted']);
     }
 }

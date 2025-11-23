@@ -1,145 +1,173 @@
-import React, { useState, useEffect, useContext } from "react";
+import { useContext, useState } from "react";
 import { useDropzone } from "react-dropzone";
+import { useAuth } from "../context/AuthContext";
 import { ProductsContext } from "../context/ProductsContext";
 import styles from "../styles/AdminDashboard.module.css";
 
-function AdminDashboardPage() {
-  const { products, fetchProducts, addProductAPI, updateProductAPI, deleteProductAPI } = useContext(ProductsContext);
-  const [image, setImage] = useState(null);
+export default function AdminDashboardPage() {
+  const { token } = useAuth();
+  const { products, addProductAPI, updateProductAPI, deleteProductAPI } = useContext(ProductsContext);
+
   const [form, setForm] = useState({
     id: "",
     name: "",
     category: "",
     price: "",
-    description: "",
     stock: "",
     rating: "",
+    description: "",
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [loadingAction, setLoadingAction] = useState(false);
 
-  // Dropzone setup
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps } = useDropzone({
     accept: { "image/*": [] },
     onDrop: (acceptedFiles) => {
       const file = acceptedFiles[0];
       if (file) {
-        const reader = new FileReader();
-        reader.onloadend = () => setImage(reader.result);
-        reader.readAsDataURL(file);
+        setImageFile(file);
+        setImagePreview(URL.createObjectURL(file));
       }
     },
   });
 
-  // Load products on mount
-  useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
-
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const buildFormData = (isUpdate = false) => {
+    const fd = new FormData();
+    if (isUpdate) fd.append("_method", "PUT"); // Laravel reads this
+    fd.append("name", form.name);
+    fd.append("category", form.category);
+    fd.append("price", form.price);
+    fd.append("stock", form.stock);
+    fd.append("rating", form.rating);
+    fd.append("description", form.description);
+    if (imageFile) fd.append("image", imageFile);
+    return fd;
+  };
+
+
+
+
+  const resetForm = () => {
+    setForm({ id: "", name: "", category: "", price: "", stock: "", rating: "", description: "" });
+    setImageFile(null);
+    setImagePreview(null);
+    setIsEditing(false);
+  };
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.category || !form.price || !image) {
-      alert("Please fill all required fields and upload an image.");
+    if (!imageFile) {
+      alert("Image is required.");
       return;
     }
-    if (!window.confirm("Are you sure you want to add this product?")) return;
-
-    const newProduct = {
-      ...form,
-      price: parseFloat(form.price),
-      rating: parseFloat(form.rating) || 0,
-      stock: parseInt(form.stock) || 0,
-      image,
-    };
-
-    await addProductAPI(newProduct);
-    fetchProducts();
-    resetForm();
-    alert("Product added successfully!");
+    setLoadingAction(true);
+    try {
+      const formData = buildFormData(false); // false = POST
+      await addProductAPI(formData, token);
+      alert("Product added successfully!");
+      resetForm();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to add product.");
+    } finally {
+      setLoadingAction(false);
+    }
   };
+
+  const handleUpdateProduct = async (e) => {
+    e.preventDefault();
+    setLoadingAction(true);
+    try {
+      const res = await updateProductAPI(form.id, buildFormData(true), token);
+
+      if (res.success) {
+        alert("Product updated!"); // Only alert if backend says success
+        resetForm();
+      } else {
+        console.error(res);
+        alert("Failed to update product."); // backend responded but with error
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update product."); // network or JS error
+    } finally {
+      setLoadingAction(false);
+    }
+  };
+
+
+
 
   const handleEdit = (product) => {
     setIsEditing(true);
     setForm(product);
-    setImage(product.image);
-  };
-
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-    if (!form.name || !form.category || !form.price) {
-      alert("Please fill all required fields.");
-      return;
-    }
-    if (!window.confirm("Save changes to this product?")) return;
-
-    const updatedProduct = { ...form, image };
-    await updateProductAPI(updatedProduct);
-    fetchProducts();
-    resetForm();
+    setImagePreview(product.image_url);
+    setImageFile(null);
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this product?")) return;
-    await deleteProductAPI(id);
-    fetchProducts();
-    alert("Product deleted successfully!");
-  };
-
-  const resetForm = () => {
-    setForm({ id: "", name: "", category: "", price: "", description: "", stock: "", rating: "" });
-    setImage(null);
-    setIsEditing(false);
+    if (!window.confirm("Delete this product?")) return;
+    setLoadingAction(true);
+    try {
+      await deleteProductAPI(id, token);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete product.");
+    } finally {
+      setLoadingAction(false);
+    }
   };
 
   return (
     <div className={styles.adminDashboard}>
       <h1>Admin Dashboard</h1>
 
-      <form className={styles.addForm} onSubmit={isEditing ? handleUpdate : handleAddProduct}>
+      <form className={styles.addForm} onSubmit={isEditing ? handleUpdateProduct : handleAddProduct}>
         <div className={styles.dropzone} {...getRootProps()}>
-          <input {...getInputProps()} />
-          {isDragActive ? (
-            <p>Drop the image here...</p>
-          ) : image ? (
-            <img src={image} alt="preview" className={styles.preview} />
-          ) : (
-            <p>Drag & drop image here, or click to upload</p>
-          )}
-        </div>
+            <input {...getInputProps()} />
+            {imagePreview ? (
+              <img src={imagePreview} alt="Preview" className={styles.preview} />
+            ) : (
+              <p>Drag & drop image here, or click to upload</p>
+            )}
+          </div>
+        <input name="name" placeholder="Food Name" value={form.name} onChange={handleChange} required />
 
-        <input name="name" placeholder="Food Name" value={form.name} onChange={handleChange} />
         <select name="category" value={form.category} onChange={handleChange} required>
           <option value="">Select Category</option>
-          <option value="Appetizer">Appetizer</option>
-          <option value="Main">Main</option>
-          <option value="Dessert">Dessert</option>
+          <option value="Appetizers">Appetizers</option>
+          <option value="Main Course">Main Course</option>
+          <option value="Desserts">Desserts</option>
+          <option value="Street Food">Street Food</option>
           <option value="Drinks">Drinks</option>
         </select>
-        <input name="price" placeholder="Price" type="number" value={form.price} onChange={handleChange} />
-        <textarea name="description" placeholder="Description" value={form.description} onChange={handleChange} />
-        <input name="stock" placeholder="Stock" type="number" value={form.stock} onChange={handleChange} />
-        <input name="rating" placeholder="Rating (0–5)" type="number" step="0.1" value={form.rating} onChange={handleChange} />
 
-        <button type="submit">{isEditing ? "Update Product" : "Add Product"}</button>
-        {isEditing && (
-          <button type="button" onClick={resetForm} className={styles.cancelBtn}>
-            Cancel
-          </button>
-        )}
+        <input name="price" type="number" placeholder="Price" value={form.price} onChange={handleChange} required />
+        <input name="stock" type="number" placeholder="Stock" value={form.stock} onChange={handleChange} />
+        <input name="rating" type="number" min="0" max="5" step="0.1" placeholder="Rating (0-5)" value={form.rating} onChange={handleChange} />
+        <textarea name="description" placeholder="Description" value={form.description} onChange={handleChange} />
+
+        <button type="submit" disabled={loadingAction}>
+          {loadingAction ? "Processing..." : isEditing ? "Update Product" : "Add Product"}
+        </button>
+
+        {isEditing && <button type="button" className={styles.cancelBtn} onClick={resetForm}>Cancel</button>}
       </form>
 
       <h2>All Products</h2>
-      {products.length === 0 ? (
-        <p>No products available.</p>
-      ) : (
+
+      <div className={styles.tableWrapper}>
         <table className={styles.productsTable}>
           <thead>
             <tr>
               <th>ID</th>
-              <th>Image</th>
+              <th>Img</th>
               <th>Name</th>
-              <th>Category</th>
+              <th>Cat</th>
               <th>Price</th>
               <th>Stock</th>
               <th>Rating</th>
@@ -151,7 +179,15 @@ function AdminDashboardPage() {
               <tr key={p.id}>
                 <td>{p.id}</td>
                 <td>
-                  <img src={p.image} alt={p.name} className={styles.thumb} />
+                  <img
+                    src={p.image_file_name ? `/assets/${p.image_file_name}` : p.image_url}
+                    alt={p.name}
+                    className={styles.thumb}
+                    onError={(e) => {
+                      e.onerror = null;
+                      e.src = p.image_url;
+                    }}
+                  />
                 </td>
                 <td>{p.name}</td>
                 <td>{p.category}</td>
@@ -166,9 +202,7 @@ function AdminDashboardPage() {
             ))}
           </tbody>
         </table>
-      )}
+      </div>
     </div>
   );
 }
-
-export default AdminDashboardPage;
