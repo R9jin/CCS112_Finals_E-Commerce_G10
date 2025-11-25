@@ -12,6 +12,7 @@ class CartController extends Controller
     {
         $userId = $request->user()->id;
 
+        // Eager load product to get details
         $cartItems = Cart::with('product')
             ->where('users_id', $userId)
             ->get();
@@ -24,21 +25,60 @@ class CartController extends Controller
     {
         $request->validate([
             'product_id' => 'required|exists:products,id',
+            'quantity' => 'nullable|integer|min:1'
         ]);
 
+        // Check if item already exists in cart, if so, just add quantity
+        $existingCart = Cart::where('users_id', $request->user()->id)
+                            ->where('product_id', $request->product_id)
+                            ->first();
+
+        if ($existingCart) {
+            $existingCart->quantity += $request->input('quantity', 1);
+            $existingCart->save();
+            return response()->json($existingCart, 200);
+        }
+
+        // Otherwise create new entry
         $cart = Cart::create([
             'users_id' => $request->user()->id,
             'product_id' => $request->product_id,
+            'quantity' => $request->input('quantity', 1)
         ]);
 
         return response()->json($cart, 201);
     }
 
-    // Remove a single cart item
-    public function destroy($id)
+    // Update quantity
+    public function update(Request $request, $id)
     {
-        $item = Cart::findOrFail($id);
-        $item->delete();
+        $request->validate([
+            'quantity' => 'required|integer|min:1'
+        ]);
+
+        $cart = Cart::findOrFail($id);
+        
+        // Ensure user owns this cart item
+        if ($cart->users_id !== $request->user()->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $cart->quantity = $request->quantity;
+        $cart->save();
+
+        return response()->json($cart);
+    }
+
+    // Remove a single cart item
+    public function destroy(Request $request, $id)
+    {
+        $cart = Cart::findOrFail($id);
+
+        if ($cart->users_id !== $request->user()->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $cart->delete();
 
         return response()->json(['message' => 'Item removed']);
     }
@@ -46,10 +86,7 @@ class CartController extends Controller
     // Clear all items of user
     public function clear(Request $request)
     {
-        $userId = $request->user()->id;
-
-        Cart::where('users_id', $userId)->delete();
-
+        Cart::where('users_id', $request->user()->id)->delete();
         return response()->json(['message' => 'Cart cleared']);
     }
 }

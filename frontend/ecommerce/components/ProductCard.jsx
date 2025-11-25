@@ -18,11 +18,21 @@ function ProductCard({ product }) {
   const fullStars = Math.round(product.rating);
   const [showNotice, setShowNotice] = useState(false);
 
-  // check if product is wishlisted
+  // Safely handle wishlist checking (convert both to strings)
   const isWishlisted = wishlistItems.includes(String(product.product_id));
 
+  // ✅ Helper to handle image URLs (local assets vs uploaded storage)
+  const getImageUrl = (url) => {
+    if (!url) return "";
+    if (url.startsWith("http")) return url; // It's an uploaded image
+    return process.env.PUBLIC_URL + url;    // It's a local asset
+  };
+
   const handleAddToCart = async () => {
-    if (!isLoggedIn) return alert("Please log in first to add items to your cart.");
+    if (!isLoggedIn) {
+        alert("Please log in first to add items to your cart.");
+        return;
+    }
     try {
       await addToCart({ ...product, quantity: 1 });
       setShowNotice(true);
@@ -34,18 +44,19 @@ function ProductCard({ product }) {
   };
 
   const handleToggleWishlist = async () => {
-    if (!isLoggedIn) return alert("Please log in first to manage your wishlist.");
-
-    const success = await toggleWishlist(product.product_id);
-    if (!success) alert("Could not update wishlist. Try again.");
+    if (!isLoggedIn) {
+        alert("Please log in first to manage your wishlist.");
+        return;
+    }
+    // Pass product_id (string) as expected by WishlistContext logic
+    await toggleWishlist(product.product_id); 
   };
-
 
   return (
     <div className={styles.productCard}>
       <div className={styles.productImage}>
         <Link to={`/product/${product.product_id}`}>
-          <img src={process.env.PUBLIC_URL + product.image_url} alt={product.name} />
+          <img src={getImageUrl(product.image_url)} alt={product.name} />
         </Link>
       </div>
 
@@ -65,7 +76,7 @@ function ProductCard({ product }) {
           <h3>{product.name}</h3>
         </Link>
 
-        <p className={styles.productPrice}>₱{product.price}</p>
+        <p className={styles.productPrice}>₱{Number(product.price).toFixed(2)}</p>
 
         <div className={styles.productFooter}>
           <span className={styles.sold}>{product.sold ? `${product.sold} Sold` : "0 Sold"}</span>

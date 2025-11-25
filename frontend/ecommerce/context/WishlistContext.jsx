@@ -4,21 +4,26 @@ import { useAuth } from "./AuthContext";
 export const WishlistContext = createContext();
 
 export const WishlistProvider = ({ children }) => {
-  const { currentUser } = useAuth();
-  const [wishlistItems, setWishlistItems] = useState([]); // array of product_id strings
+  // ✅ FIX: Destructure token
+  const { token } = useAuth();
+  const [wishlistItems, setWishlistItems] = useState([]); 
   const API_BASE_URL = "http://127.0.0.1:8000/api";
 
   useEffect(() => {
-    if (!currentUser?.token) return;
+    if (!token) {
+        setWishlistItems([]);
+        return;
+    }
 
     const fetchWishlist = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/wishlist`, {
-          headers: { Authorization: `Bearer ${currentUser.token}` },
+          headers: { Authorization: `Bearer ${token}` }, // ✅ Use token
         });
         if (!res.ok) throw new Error("Failed to fetch wishlist");
 
         const data = await res.json();
+        // Ensure we store string IDs to match product IDs
         setWishlistItems(data.map(item => String(item.product_id)));
       } catch (err) {
         console.error("Wishlist fetch error:", err);
@@ -27,13 +32,12 @@ export const WishlistProvider = ({ children }) => {
     };
 
     fetchWishlist();
-  }, [currentUser]);
+  }, [token]); // ✅ Depend on token
 
   const addToWishlist = async (productId) => {
-    if (!currentUser?.token) return false;
+    if (!token) return false;
     const id = String(productId);
 
-    // Optimistic update
     setWishlistItems(prev => [...prev, id]);
 
     try {
@@ -41,53 +45,46 @@ export const WishlistProvider = ({ children }) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${currentUser.token}`,
+          Authorization: `Bearer ${token}`, // ✅ Use token
         },
         body: JSON.stringify({ product_id: id }),
       });
 
-      if (res.status === 409) {
-        // already in wishlist, ignore
-        return true;
-      }
-
+      if (res.status === 409) return true;
       if (!res.ok) throw new Error("Failed to add to wishlist");
-
       return true;
     } catch (err) {
       console.error("Add wishlist error:", err);
-      // rollback optimistic update
       setWishlistItems(prev => prev.filter(pid => pid !== id));
       return false;
     }
   };
 
   const removeFromWishlist = async (productId) => {
-    if (!currentUser?.token) return false;
+    if (!token) return false;
     const id = String(productId);
 
-    // Optimistic update
     setWishlistItems(prev => prev.filter(pid => pid !== id));
 
     try {
-      // fetch wishlist to find record id
+      // First fetch current wishlist to find the specific record ID to delete
       const res = await fetch(`${API_BASE_URL}/wishlist`, {
-        headers: { Authorization: `Bearer ${currentUser.token}` },
+        headers: { Authorization: `Bearer ${token}` }, // ✅ Use token
       });
       const data = await res.json();
+      
       const record = data.find(item => String(item.product_id) === id);
-      if (!record) return true; // already gone
+      if (!record) return true;
 
       const deleteRes = await fetch(`${API_BASE_URL}/wishlist/${record.id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${currentUser.token}` },
+        headers: { Authorization: `Bearer ${token}` }, // ✅ Use token
       });
+      
       if (!deleteRes.ok) throw new Error("Failed to remove");
-
       return true;
     } catch (err) {
       console.error("Remove wishlist error:", err);
-      // rollback optimistic update
       setWishlistItems(prev => [...prev, id]);
       return false;
     }

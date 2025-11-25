@@ -7,11 +7,15 @@ import styles from "../styles/WishlistCard.module.css";
  * price, and action buttons for adding to cart, buying immediately, or removing.
  */
 function WishlistCard({ product, onRemove, onAddCart, onBuyNow }) {
+  const imageSrc = product.image_url?.startsWith("http")
+    ? product.image_url
+    : process.env.PUBLIC_URL + product.image_url;
+
   return (
     <div className={styles.wishlistCard}>
       {/* Product image */}
       <div className={styles.wishlistImage}>
-        <img src={process.env.PUBLIC_URL + product.image_url} alt={product.name} />
+        <img src={imageSrc} alt={product.name} />
       </div>
 
       {/* Product details */}

@@ -30,3 +30,10 @@ export async function deleteProduct(id, token) {
     headers: { Authorization: `Bearer ${token}` },
   }).then(res => res.json());
 }
+
+export async function restoreProducts(token) {
+  return fetch(`${API_BASE_URL}/products/restore`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  }).then(res => res.json());
+}

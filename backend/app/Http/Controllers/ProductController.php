@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Database\Seeders\ProductSeeder;
 
 class ProductController extends Controller
 {
@@ -76,5 +77,20 @@ class ProductController extends Controller
     {
         $product->delete();
         return response()->json(['success' => true, 'message' => 'Product deleted']);
+    }
+
+    public function restore()
+    {
+        // 1. Delete all existing products (Cascade will remove them from carts/wishlists)
+        Product::query()->delete();
+
+        // 2. Run the ProductSeeder to insert defaults from JSON
+        $seeder = new ProductSeeder();
+        $seeder->run();
+
+        return response()->json([
+            'success' => true, 
+            'message' => 'Products restored to default settings.'
+        ]);
     }
 }
