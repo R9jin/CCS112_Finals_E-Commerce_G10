@@ -27,7 +27,8 @@ class OrderController extends Controller
     // Create new order from cart
     public function store(Request $request)
     {
-        $cartItems = Cart::where('user_id', auth()->id())->get();
+        // ✅ FIX: Use 'users_id' to match your database column name for the Cart table
+        $cartItems = Cart::where('users_id', auth()->id())->get();
 
         if ($cartItems->isEmpty()) {
             return response()->json([
@@ -53,8 +54,8 @@ class OrderController extends Controller
             ]);
         }
 
-        // Clear cart
-        Cart::where('user_id', auth()->id())->delete();
+        // ✅ FIX: Use 'users_id' here as well to clear the cart
+        Cart::where('users_id', auth()->id())->delete();
 
         return response()->json([
             'success' => true,
@@ -76,4 +77,3 @@ class OrderController extends Controller
         ]);
     }
 }
-

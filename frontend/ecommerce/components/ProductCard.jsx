@@ -29,19 +29,25 @@ function ProductCard({ product }) {
   };
 
   const handleAddToCart = async () => {
-    if (!isLoggedIn) {
-        alert("Please log in first to add items to your cart.");
-        return;
-    }
-    try {
-      await addToCart({ ...product, quantity: 1 });
-      setShowNotice(true);
-      setTimeout(() => setShowNotice(false), 3000);
-    } catch (err) {
-      console.error("Failed to add to cart:", err);
-      alert("Could not add item to cart. Try again.");
-    }
-  };
+      if (!isLoggedIn) {
+          alert("Please log in first to add items to your cart.");
+          return;
+      }
+      try {
+        // ✅ FIX: Wait for success response
+        const success = await addToCart({ ...product, quantity: 1 });
+        
+        if (success) {
+          setShowNotice(true);
+          setTimeout(() => setShowNotice(false), 3000);
+        } else {
+          alert("Could not add item to cart.");
+        }
+      } catch (err) {
+        console.error("Failed to add to cart:", err);
+        alert("Could not add item to cart. Try again.");
+      }
+    };
 
   const handleToggleWishlist = async () => {
     if (!isLoggedIn) {

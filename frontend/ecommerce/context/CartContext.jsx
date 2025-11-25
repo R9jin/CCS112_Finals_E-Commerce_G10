@@ -4,7 +4,6 @@ import { useAuth } from "./AuthContext";
 export const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
-  // ✅ FIX: Only destructure 'token', remove 'currentUser' to fix ESLint warning
   const { token } = useAuth();
   const [cartItems, setCartItems] = useState([]);
   const API_BASE_URL = "http://127.0.0.1:8000/api";
@@ -19,11 +18,11 @@ export const CartProvider = ({ children }) => {
       });
       const data = await res.json();
 
-      // Map backend structure { id, product: {...} } to frontend structure
+      // Map backend structure { id, quantity, product: {...} } to frontend structure
       const formattedCart = Array.isArray(data) ? data.map(item => ({
-        ...item.product,        // Spread product details (name, price, etc)
+        ...item.product,        // Spread product details
         cart_id: item.id,       // Keep cart ID for removal
-        quantity: 1,            // Default quantity (since DB doesn't have it yet)
+        quantity: item.quantity, // ✅ FIX: Use actual quantity from DB
         image: item.product.image_url // Map image_url to image
       })) : [];
 
@@ -34,7 +33,6 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Load cart when token changes
   useEffect(() => {
     if (token) {
       fetchCart();
@@ -44,35 +42,62 @@ export const CartProvider = ({ children }) => {
   }, [token]);
 
   const addToCart = async (product) => {
-    if (!token) return; 
+    if (!token) return false; 
 
     try {
-      await fetch(`${API_BASE_URL}/cart`, {
+      // Use existing quantity if provided, else 1
+      const qty = product.quantity || 1;
+
+      const res = await fetch(`${API_BASE_URL}/cart`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`
         },
-        // Backend expects 'product_id' (integer DB ID)
-        body: JSON.stringify({ product_id: product.id })
+        // Backend expects product_id and quantity
+        body: JSON.stringify({ 
+            product_id: product.id,
+            quantity: qty 
+        })
       });
 
-      // Re-fetch cart to get the full list with product details
-      fetchCart(); 
+      if (res.ok) {
+        fetchCart(); 
+        return true; // ✅ FIX: Return success
+      } else {
+        console.error("Failed to add to cart");
+        return false;
+      }
     } catch (err) {
       console.error("Add to cart error:", err);
+      return false;
     }
   };
 
   const updateQuantity = async (productId, quantity) => {
-    // Frontend-only update since DB doesn't have quantity column in migration yet
+    // Optimistic update
     setCartItems(prev => prev.map(p => (p.id === productId ? { ...p, quantity } : p)));
+    
+    const item = cartItems.find(i => i.id === productId);
+    if (!item) return;
+
+    try {
+        await fetch(`${API_BASE_URL}/cart/${item.cart_id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ quantity })
+        });
+    } catch (err) {
+        console.error("Failed to update quantity", err);
+    }
   };
 
   const removeFromCart = async (productId) => {
     if (!token) return;
 
-    // Find the cart_id (relationship ID) not the product ID
     const itemToRemove = cartItems.find(item => item.id === productId);
     if (!itemToRemove) return;
 
@@ -82,7 +107,6 @@ export const CartProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      // Update UI
       setCartItems(prev => prev.filter(p => p.id !== productId));
     } catch (err) {
       console.error("Remove cart error:", err);

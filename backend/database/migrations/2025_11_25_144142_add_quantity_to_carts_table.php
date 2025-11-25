@@ -6,23 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::table('carts', function (Blueprint $table) {
-            //
+            // Add quantity column, defaulting to 1
+            $table->integer('quantity')->default(1)->after('product_id');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('carts', function (Blueprint $table) {
-            //
+            $table->dropColumn('quantity');
         });
     }
 };
