@@ -1,59 +1,41 @@
-import { createContext, useState, useEffect } from "react";
+import { createContext, useEffect, useState } from "react";
+import { createProduct, deleteProduct, getProducts, updateProduct } from "../api/products";
+import { useAuth } from "./AuthContext";
 
 export const ProductsContext = createContext();
 
-const API_BASE_URL = "http://127.0.0.1:8000/api";
-
 export const ProductsProvider = ({ children }) => {
+  const { token } = useAuth();
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  // Fetch all products across all paginated pages
-  const fetchAllProducts = async () => {
-    try {
-      let allProducts = [];
-      let page = 1;
-      let totalPages = 1;
-
-      do {
-        const res = await fetch(`${API_BASE_URL}/products?page=${page}`);
-        const json = await res.json();
-
-        // Convert price and rating to numbers
-        const productArray = Array.isArray(json.data?.data)
-          ? json.data.data.map(p => ({
-              ...p,
-              price: Number(p.price),
-              rating: Number(p.rating),
-            }))
-          : [];
-
-        allProducts = [...allProducts, ...productArray];
-        totalPages = json.data?.last_page || 1;
-        page++;
-      } while (page <= totalPages);
-
-      setProducts(allProducts);
-      console.log("Loaded all products:", allProducts);
-    } catch (err) {
-      console.error("Failed to fetch products:", err);
-      setProducts([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
-    fetchAllProducts();
+    const fetchAll = async () => {
+      const res = await getProducts();
+      if (res.success) setProducts(res.data);
+    };
+    fetchAll();
   }, []);
 
-  const refreshProducts = async () => {
-    setLoading(true);
-    await fetchAllProducts();
+  const addProductAPI = async (formData) => {
+    const res = await createProduct(formData, token);
+    if (res.success) setProducts(prev => [...prev, res.data]);
+    return res;
+  };
+
+  const updateProductAPI = async (id, formData) => {
+    const res = await updateProduct(id, formData, token);
+    if (res.success) setProducts(prev => prev.map(p => p.id === id ? res.data : p));
+    return res;
+  };
+
+  const deleteProductAPI = async (id) => {
+    const res = await deleteProduct(id, token);
+    if (res.success) setProducts(prev => prev.filter(p => p.id !== id));
+    return res;
   };
 
   return (
-    <ProductsContext.Provider value={{ products, refreshProducts, loading }}>
+    <ProductsContext.Provider value={{ products, addProductAPI, updateProductAPI, deleteProductAPI }}>
       {children}
     </ProductsContext.Provider>
   );

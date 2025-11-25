@@ -8,7 +8,14 @@ import styles from "../styles/CheckoutPage.module.css";
 
 /**
  * CheckoutPage Component
+ *
+ * Handles the checkout process:
+ * - Displays billing form
+ * - Shows cart summary
+ * - Allows user to pick a payment method
+ * - Saves order to context + localStorage
  */
+
 export default function CheckoutPage() {
   const { cartItems, clearCart } = useContext(CartContext);
   const { addTransaction } = useContext(OrderHistoryContext);

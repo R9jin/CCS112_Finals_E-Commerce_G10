@@ -1,12 +1,12 @@
-import { useState, useEffect, useContext } from "react";
+import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import starIcon from "../assets/star.png";
-import heartIcon from "../assets/heart.png";
 import cartIcon from "../assets/cart.png";
-import styles from "../styles/ProductDetails.module.css";
+import heartIcon from "../assets/heart.png";
+import starIcon from "../assets/star.png";
+import { useAuth } from "../context/AuthContext";
 import { CartContext } from "../context/CartContext";
 import { WishlistContext } from "../context/WishlistContext";
-import { useAuth } from "../context/AuthContext";
+import styles from "../styles/ProductDetails.module.css";
 
 function ProductDetails({ product }) {
   const [quantity, setQuantity] = useState(1);
@@ -16,7 +16,9 @@ function ProductDetails({ product }) {
   const { isLoggedIn } = useAuth();
   const navigate = useNavigate();
 
-  const isWishlisted = wishlistItems.includes(product.id);
+  // ✅ FIX 1: Use product.product_id to match the items in wishlistItems context
+  const isWishlisted = wishlistItems.includes(product.product_id);
+  
   const fullStars = Math.round(product.rating);
 
   const handleAddToCart = async () => {
@@ -57,7 +59,7 @@ function ProductDetails({ product }) {
     }
 
     try {
-      await toggleWishlist(product.id);
+      await toggleWishlist(product.product_id);
     } catch (err) {
       console.error("Failed to update wishlist:", err);
       alert("Could not update wishlist. Try again.");
@@ -81,7 +83,9 @@ function ProductDetails({ product }) {
 
       <div className={styles.detailsSection}>
         <h2>{product.name}</h2>
-        <p className={styles.price}>₱{product.price.toFixed(2)}</p>
+        
+        {/* ✅ FIX 2: Convert string price to Number before .toFixed() */}
+        <p className={styles.price}>₱{Number(product.price).toFixed(2)}</p>
 
         <div className={styles.rating}>
           {[...Array(5)].map((_, i) => (

@@ -1,7 +1,7 @@
-import { useParams } from "react-router-dom";
 import { useContext } from "react";
-import { ProductsContext } from "../context/ProductsContext";
+import { useParams } from "react-router-dom";
 import ProductDetails from "../components/ProductDetails";
+import { ProductsContext } from "../context/ProductsContext";
 
 function ProductDetailsPage() {
   const { id } = useParams();
@@ -15,8 +15,10 @@ function ProductDetailsPage() {
     );
   }
 
-  // Normalize the product ID type (Laravel might return numeric or string)
-  const product = products.find((p) => String(p.id) === String(id));
+  // ✅ FIX: Compare 'p.product_id' (the string ID "AP001") 
+  // with the 'id' from the URL (which is also "AP001").
+  // Previously it was checking p.id (which is the database integer 1, 2, 3...)
+  const product = products.find((p) => p.product_id === id);
 
   if (!product) {
     return (
@@ -26,6 +28,7 @@ function ProductDetailsPage() {
     );
   }
 
+  // Pass the found product to the details component
   return <ProductDetails product={{ ...product, image: product.image_url }} />;
 }
 
