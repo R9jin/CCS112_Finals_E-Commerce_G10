@@ -12,6 +12,7 @@ class CartController extends Controller
     {
         $userId = $request->user()->id;
 
+        // Eager load product to get details
         $cartItems = Cart::with('product')
             ->where('users_id', $userId)
             ->get();

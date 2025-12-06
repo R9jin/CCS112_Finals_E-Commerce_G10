@@ -47,4 +47,14 @@ class WishlistController extends Controller
 
         return response()->json(['message' => 'Removed from wishlist']);
     }
+
+    // Add this new method
+    public function removeByProduct(Request $request, $productId)
+    {
+        $deleted = Wishlist::where('user_id', $request->user()->id)
+            ->where('product_id', $productId)
+            ->delete();
+
+        return response()->json(['message' => 'Removed from wishlist']);
+    }
 }

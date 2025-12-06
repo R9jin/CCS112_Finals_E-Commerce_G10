@@ -4,12 +4,6 @@ import { useAuth } from "../context/AuthContext";
 import { ProductsContext } from "../context/ProductsContext";
 import styles from "../styles/AdminDashboard.module.css";
 
-/* ==========================================
-ADMIN DASHBOARD PAGE
-Handles: product creation, editing,
-deletion, uploading images, and listing.
-========================================== */
-
 export default function AdminDashboardPage() {
   const { token } = useAuth();
   const { products, addProductAPI, updateProductAPI, deleteProductAPI } = useContext(ProductsContext);
@@ -53,9 +47,6 @@ export default function AdminDashboardPage() {
     if (imageFile) fd.append("image", imageFile);
     return fd;
   };
-
-
-
 
   const resetForm = () => {
     setForm({ id: "", name: "", category: "", price: "", stock: "", rating: "", description: "" });

@@ -16,8 +16,8 @@ function ProductDetails({ product }) {
   const { isLoggedIn } = useAuth();
   const navigate = useNavigate();
 
-  // ✅ FIX 1: Use product.product_id to match the items in wishlistItems context
-  const isWishlisted = wishlistItems.includes(product.product_id);
+  // ✅ FIX: Convert both to strings for a safe check
+  const isWishlisted = wishlistItems.includes(String(product.product_id));
   
   const fullStars = Math.round(product.rating);
 
@@ -58,12 +58,8 @@ function ProductDetails({ product }) {
       return;
     }
 
-    try {
-      await toggleWishlist(product.product_id);
-    } catch (err) {
-      console.error("Failed to update wishlist:", err);
-      alert("Could not update wishlist. Try again.");
-    }
+    // The context now handles the race condition / optimistic update
+    await toggleWishlist(product.product_id);
   };
 
   if (!product) return <p>Loading product details...</p>;
@@ -84,7 +80,6 @@ function ProductDetails({ product }) {
       <div className={styles.detailsSection}>
         <h2>{product.name}</h2>
         
-        {/* ✅ FIX 2: Convert string price to Number before .toFixed() */}
         <p className={styles.price}>₱{Number(product.price).toFixed(2)}</p>
 
         <div className={styles.rating}>
