@@ -5,6 +5,8 @@ import { CartContext } from "../context/CartContext";
 import { WishlistContext } from "../context/WishlistContext";
 import styles from "../styles/WishlistPage.module.css";
 
+//wishlist page if
+
 export default function WishListPage() {
   const { addToCart } = useContext(CartContext);
   // wishlistItems is now an array of strings like ['AP001', 'MC002']
