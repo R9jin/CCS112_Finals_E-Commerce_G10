@@ -11,6 +11,8 @@ function WishlistCard({ product, onRemove, onAddCart, onBuyNow }) {
     ? product.image_url
     : process.env.PUBLIC_URL + product.image_url;
 
+    //wishlist card
+
   return (
     <div className={styles.wishlistCard}>
       {/* Product image */}
