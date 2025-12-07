@@ -5,7 +5,7 @@ import { CartContext } from "../context/CartContext";
 import { WishlistContext } from "../context/WishlistContext";
 import styles from "../styles/WishlistPage.module.css";
 
-//wishlist page if
+//wishlist page if not working repeat
 
 export default function WishListPage() {
   const { addToCart } = useContext(CartContext);
