@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -7,6 +6,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Cart;
 use App\Models\Product;
+use Illuminate\Support\Facades\DB; // Import DB for transactions
 
 class OrderController extends Controller
 {
@@ -24,44 +24,64 @@ class OrderController extends Controller
         ]);
     }
 
-    // Create new order from cart
     public function store(Request $request)
     {
-        // ✅ FIX: Use 'users_id' to match your database column name for the Cart table
-        $cartItems = Cart::where('users_id', auth()->id())->get();
+        // Use a transaction to ensure data integrity
+        return DB::transaction(function () use ($request) {
+            $user = auth()->user();
+            
+            // Fetch user's cart items
+            $cartItems = Cart::where('users_id', $user->id)->with('product')->get();
 
-        if ($cartItems->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Cart is empty'
-            ], 400);
-        }
+            if ($cartItems->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'Cart is empty'], 400);
+            }
 
-        // Create the order
-        $order = Order::create([
-            'user_id' => auth()->id(),
-            'total_price' => $cartItems->sum(fn($i) => $i->product->price * $i->quantity),
-            'status' => 'Pending'
-        ]);
+            // Calculate total and validate stock BEFORE creating the order
+            $totalAmount = 0;
 
-        // Add order items
-        foreach ($cartItems as $cart) {
-            OrderItem::create([
-                'order_id' => $order->id,
-                'product_id' => $cart->product_id,
-                'quantity' => $cart->quantity,
-                'price' => $cart->product->price
+            foreach ($cartItems as $item) {
+                if ($item->product->stock < $item->quantity) {
+                    return response()->json([
+                        'success' => false, 
+                        'message' => "Insufficient stock for product: " . $item->product->name
+                    ], 400);
+                }
+                $totalAmount += $item->product->price * $item->quantity;
+            }
+
+            // Create the Order
+            // Note: Ensure your Order migration has an 'address' column if you want to save it
+            $order = Order::create([
+                'user_id' => $user->id,
+                'total_price' => $totalAmount,
+                'status' => 'Pending',
+                // 'address' => $request->address, // Uncomment if you added address to Order table
             ]);
-        }
 
-        // ✅ FIX: Use 'users_id' here as well to clear the cart
-        Cart::where('users_id', auth()->id())->delete();
+            // Process Items: Create OrderItem and Decrease Stock
+            foreach ($cartItems as $item) {
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'product_id' => $item->product_id,
+                    'quantity' => $item->quantity,
+                    'price' => $item->product->price
+                ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Order placed successfully',
-            'data' => $order
-        ]);
+                // DECREMENT STOCK & INCREMENT SOLD
+                $item->product->decrement('stock', $item->quantity);
+                $item->product->increment('sold', $item->quantity);
+            }
+
+            // Clear the User's Cart
+            Cart::where('users_id', $user->id)->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Order placed successfully',
+                'data' => $order
+            ]);
+        });
     }
 
     // Track a single order
@@ -73,6 +93,26 @@ class OrderController extends Controller
 
         return response()->json([
             'success' => true,
+            'data' => $order
+        ]);
+    }
+
+    // Update order status
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|string'
+        ]);
+
+        $order = Order::where('user_id', auth()->id())->findOrFail($id);
+        
+        $order->update([
+            'status' => $request->status
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order status updated',
             'data' => $order
         ]);
     }

@@ -18,7 +18,7 @@ export default function CartPage() {
   const subtotal = cartItems.reduce((total, item) => {
     return total + (item.price || 0) * item.quantity;
   }, 0);
- // Shipping is free if subtotal is between 1–199
+
   const shippingFee = subtotal < 200 && subtotal > 0 ? 0 : 50;
   const totalPrice = subtotal + shippingFee;
 

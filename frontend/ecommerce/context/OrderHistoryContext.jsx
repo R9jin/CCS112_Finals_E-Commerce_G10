@@ -1,47 +1,38 @@
-import { createContext, useState, useEffect } from "react";
+import { createContext, useEffect, useState } from "react";
+import { getOrders } from "../api/orders";
 import { useAuth } from "./AuthContext";
 
 export const OrderHistoryContext = createContext();
 
 export const OrderHistoryProvider = ({ children }) => {
-  const { currentUser } = useAuth();
+  const { token } = useAuth(); 
   const [transactions, setTransactions] = useState([]);
 
+  // Function to fetch latest data from Laravel
+  const fetchOrders = async () => {
+    if (!token) return;
+
+    try {
+      const response = await getOrders(token);
+      if (response && response.success) {
+        setTransactions(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch orders:", error);
+    }
+  };
+
   useEffect(() => {
-    if (!currentUser) return;
-    fetch(`http://127.0.0.1:8000/api/orders`, {
-      headers: { Authorization: `Bearer ${currentUser.token}` }
-    })
-      .then(res => res.json())
-      .then(data => setTransactions(data))
-      .catch(() => setTransactions([]));
-  }, [currentUser]);
-
-  const addTransaction = async (newTransaction) => {
-    if (!currentUser) return;
-    const res = await fetch(`http://127.0.0.1:8000/api/orders`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${currentUser.token}`
-      },
-      body: JSON.stringify(newTransaction)
-    });
-    const savedTransaction = await res.json();
-    setTransactions(prev => [...prev, savedTransaction]);
-  };
-
-  const clearTransactions = async () => {
-    if (!currentUser) return;
-    await fetch(`http://127.0.0.1:8000/api/orders/clear`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${currentUser.token}` }
-    });
-    setTransactions([]);
-  };
+    fetchOrders();
+  }, [token]);
 
   return (
-    <OrderHistoryContext.Provider value={{ transactions, addTransaction, clearTransactions }}>
+    <OrderHistoryContext.Provider 
+      value={{ 
+        transactions, 
+        refreshOrders: fetchOrders // ✅ Expose this to the app
+      }}
+    >
       {children}
     </OrderHistoryContext.Provider>
   );

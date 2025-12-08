@@ -29,17 +29,27 @@ Route::middleware('auth:sanctum')->group(function () {
     // Wishlist
     Route::post('/wishlist', [WishlistController::class, 'store']);
     Route::get('/wishlist', [WishlistController::class, 'index']);
-    Route::delete('/wishlist/{id}', [WishlistController::class, 'destroy']);
+    Route::delete('/wishlist/{id}', [WishlistController::class, 'destroy']); // Deletes by Table ID
+    Route::delete('/wishlist/product/{id}', [WishlistController::class, 'removeByProduct']); // Deletes by Product ID
 
+    // Cart
     // Cart
     Route::get('/cart', [CartController::class, 'index']);
     Route::post('/cart', [CartController::class, 'store']);
+    
+    // ✅ FIX: Move this ABOVE the '/cart/{id}' routes
+    Route::delete('/cart/clear', [CartController::class, 'clear']);
+
     Route::put('/cart/{id}', [CartController::class, 'update']);
     Route::delete('/cart/{id}', [CartController::class, 'destroy']);
-    Route::delete('/cart/clear', [CartController::class, 'clear']);// Make sure this is above the destroy route if conflicting, or use distinct name
     // Orders
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders', [OrderController::class, 'index']);
+    Route::put('/orders/{order}', [OrderController::class, 'update']);
+
+    // Authenticated user info
+    // ✅ PASTE IT HERE:
+    Route::put('/user', [AuthController::class, 'update']); 
 
     // Authenticated user info
     Route::get('/user', function (Request $request) {
