@@ -33,14 +33,19 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/wishlist/product/{id}', [WishlistController::class, 'removeByProduct']); // Deletes by Product ID
 
     // Cart
+    // Cart
     Route::get('/cart', [CartController::class, 'index']);
     Route::post('/cart', [CartController::class, 'store']);
+    
+    // ✅ FIX: Move this ABOVE the '/cart/{id}' routes
+    Route::delete('/cart/clear', [CartController::class, 'clear']);
+
     Route::put('/cart/{id}', [CartController::class, 'update']);
     Route::delete('/cart/{id}', [CartController::class, 'destroy']);
-    Route::delete('/cart/clear', [CartController::class, 'clear']);// Make sure this is above the destroy route if conflicting, or use distinct name
     // Orders
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders', [OrderController::class, 'index']);
+    Route::put('/orders/{order}', [OrderController::class, 'update']);
 
     // Authenticated user info
     // ✅ PASTE IT HERE:

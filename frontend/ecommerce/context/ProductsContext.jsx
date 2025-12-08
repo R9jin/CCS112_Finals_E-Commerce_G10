@@ -1,5 +1,11 @@
 import { createContext, useEffect, useState } from "react";
-import { createProduct, deleteProduct, getProducts, restoreProducts, updateProduct } from "../api/products";
+import {
+  createProduct,
+  deleteProduct,
+  getProducts,
+  restoreProducts,
+  updateProduct
+} from "../api/products";
 import { useAuth } from "./AuthContext";
 
 export const ProductsContext = createContext();
@@ -8,49 +14,28 @@ export const ProductsProvider = ({ children }) => {
   const { token } = useAuth();
   const [products, setProducts] = useState([]);
 
+  // Fetch products from backend
+  const loadProducts = async () => {
+    const res = await getProducts();
+    if (res.success) setProducts(res.data);
+  };
+
   useEffect(() => {
-    const fetchAll = async () => {
-      const res = await getProducts();
-      if (res.success) setProducts(res.data);
-    };
-    fetchAll();
+    loadProducts();
   }, []);
 
-  const addProductAPI = async (formData) => {
-    const res = await createProduct(formData, token);
-    if (res.success) setProducts(prev => [...prev, res.data]);
-    return res;
-  };
-
-  const updateProductAPI = async (id, formData) => {
-    const res = await updateProduct(id, formData, token);
-    if (res.success) setProducts(prev => prev.map(p => p.id === id ? res.data : p));
-    return res;
-  };
-
-  const deleteProductAPI = async (id) => {
-    const res = await deleteProduct(id, token);
-    if (res.success) setProducts(prev => prev.filter(p => p.id !== id));
-    return res;
-  };
-
-  const restoreProductsAPI = async () => {
-    const res = await restoreProducts(token);
-    if (res.success) {
-      const allProducts = await getProducts();
-      if (allProducts.success) setProducts(allProducts.data);
-    }
-    return res;
+  // Call this after checkout to refresh stock
+  const refreshStock = async () => {
+    await loadProducts();
   };
 
   return (
-    <ProductsContext.Provider value={{ 
-      products,
-      addProductAPI,
-      updateProductAPI,
-      deleteProductAPI,
-      restoreProductsAPI
-    }}>
+    <ProductsContext.Provider
+      value={{
+        products,
+        refreshStock,
+      }}
+    >
       {children}
     </ProductsContext.Provider>
   );
