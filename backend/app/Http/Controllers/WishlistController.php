@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+//wishlist controller - update
+
 use App\Models\Wishlist;
 use Illuminate\Http\Request;
 
