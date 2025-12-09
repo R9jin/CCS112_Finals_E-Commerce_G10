@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\DB; // Import DB for transactions
 
 class OrderController extends Controller
 {
-    // View order history
     public function index()
     {
         $orders = Order::with('items.product')
@@ -26,18 +25,16 @@ class OrderController extends Controller
 
     public function store(Request $request)
     {
-        // Use a transaction to ensure data integrity
+
         return DB::transaction(function () use ($request) {
             $user = auth()->user();
             
-            // Fetch user's cart items
             $cartItems = Cart::where('users_id', $user->id)->with('product')->get();
 
             if ($cartItems->isEmpty()) {
                 return response()->json(['success' => false, 'message' => 'Cart is empty'], 400);
             }
 
-            // Calculate total and validate stock BEFORE creating the order
             $totalAmount = 0;
 
             foreach ($cartItems as $item) {
@@ -50,16 +47,12 @@ class OrderController extends Controller
                 $totalAmount += $item->product->price * $item->quantity;
             }
 
-            // Create the Order
-            // Note: Ensure your Order migration has an 'address' column if you want to save it
             $order = Order::create([
                 'user_id' => $user->id,
                 'total_price' => $totalAmount,
                 'status' => 'Pending',
-                // 'address' => $request->address, // Uncomment if you added address to Order table
             ]);
 
-            // Process Items: Create OrderItem and Decrease Stock
             foreach ($cartItems as $item) {
                 OrderItem::create([
                     'order_id' => $order->id,
@@ -68,12 +61,10 @@ class OrderController extends Controller
                     'price' => $item->product->price
                 ]);
 
-                // DECREMENT STOCK & INCREMENT SOLD
                 $item->product->decrement('stock', $item->quantity);
                 $item->product->increment('sold', $item->quantity);
             }
 
-            // Clear the User's Cart
             Cart::where('users_id', $user->id)->delete();
 
             return response()->json([

@@ -1,62 +1,146 @@
-import React, { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import styles from "../styles/RatingOrderPage.module.css"; // ✅ CSS Module
+import { useContext, useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { submitReview } from "../api/reviews";
+import { useAuth } from "../context/AuthContext";
+import { OrderHistoryContext } from "../context/OrderHistoryContext";
+import styles from "../styles/RatingOrderPage.module.css";
+
+const API_BASE_URL = "http://127.0.0.1:8000/api";
 
 export default function RatingPage() {
   const { transactionId } = useParams();
   const navigate = useNavigate();
+  const { transactions, refreshOrders } = useContext(OrderHistoryContext);
+  const { token } = useAuth();
 
-  const [foodRating, setFoodRating] = useState(0);
-  const [deliveryRating, setDeliveryRating] = useState(0);
-  const [review, setReview] = useState("");
+  const [order, setOrder] = useState(null);
+  const [reviews, setReviews] = useState({});
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmitRating = () => {
-    const ratings = { transactionId, foodRating, deliveryRating, review };
-    localStorage.setItem(`rating_${transactionId}`, JSON.stringify(ratings));
-    alert("Thank you for your feedback!");
-    navigate("/order-history");
+  useEffect(() => {
+    if (transactions.length > 0) {
+      const foundOrder = transactions.find((t) => String(t.id) === transactionId);
+      if (foundOrder) setOrder(foundOrder);
+    }
+  }, [transactions, transactionId]);
+
+  const handleRatingChange = (productId, rating) => {
+    setReviews((prev) => ({
+      ...prev,
+      [productId]: { ...prev[productId], rating },
+    }));
   };
+
+  const handleCommentChange = (productId, comment) => {
+    setReviews((prev) => ({
+      ...prev,
+      [productId]: { ...prev[productId], comment },
+    }));
+  };
+
+  const updateOrderStatusToCompleted = async (orderId) => {
+    try {
+      await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: "Completed" }),
+      });
+    } catch (error) {
+      console.error("Failed to update order status:", error);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!order) return;
+
+    // ✅ FIX: Ensure ALL products have a rating > 0 before proceeding
+    const allRated = order.items.every(
+      (item) => reviews[item.product.id]?.rating > 0
+    );
+
+    if (!allRated) {
+      alert("Please rate all items before submitting.");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      // 1. Submit all reviews
+      const promises = order.items.map((item) => {
+        const reviewData = reviews[item.product.id];
+        return submitReview(
+          {
+            product_id: item.product.id,
+            rating: reviewData.rating,
+            comment: reviewData.comment || "",
+          },
+          token
+        );
+      });
+
+      // Wait for all reviews to be submitted successfully
+      await Promise.all(promises);
+
+      // 2. ✅ Update Order Status to "Completed" on Backend only after ratings are done
+      await updateOrderStatusToCompleted(order.id);
+
+      // 3. Refresh Context
+      await refreshOrders();
+
+      alert("Reviews submitted! Order completed.");
+      navigate("/order-history");
+    } catch (error) {
+      console.error("Failed to submit reviews:", error);
+      alert("An error occurred while submitting your reviews.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!order) return <p className={styles.trackOrderMainContainer}>Loading order...</p>;
 
   return (
     <div className={styles.trackOrderMainContainer}>
-      <h2>Rate Your Order</h2>
+      <h2>Rate Your Items</h2>
+      <p>Order ID: {order.id}</p>
 
-      <div className={styles.ratingGroup}>
-        <label>Food Rating:</label>
-        {[1, 2, 3, 4, 5].map((i) => (
-          <span
-            key={i}
-            className={`${styles.star} ${i <= foodRating ? styles.active : ""}`}
-            onClick={() => setFoodRating(i)}
-          >
-            ★
-          </span>
-        ))}
-      </div>
+      {order.items.map((item) => (
+        <div key={item.id} className={styles.ratingItem}>
+          <p><strong>{item.product.name}</strong></p>
+          
+          <div className={styles.starContainer}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <span
+                key={star}
+                className={`${styles.star} ${
+                  (reviews[item.product.id]?.rating || 0) >= star ? styles.active : ""
+                }`}
+                onClick={() => handleRatingChange(item.product.id, star)}
+              >
+                ★
+              </span>
+            ))}
+          </div>
 
-      <div className={styles.ratingGroup}>
-        <label>Delivery Rating:</label>
-        {[1, 2, 3, 4, 5].map((i) => (
-          <span
-            key={i}
-            className={`${styles.star} ${i <= deliveryRating ? styles.active : ""}`}
-            onClick={() => setDeliveryRating(i)}
-          >
-            ★
-          </span>
-        ))}
-      </div>
+          <textarea
+            className={styles.reviewTextarea}
+            placeholder={`Review for ${item.product.name}...`}
+            value={reviews[item.product.id]?.comment || ""}
+            onChange={(e) => handleCommentChange(item.product.id, e.target.value)}
+          />
+        </div>
+      ))}
 
-      <label>Review:</label>
-      <textarea
-        className={styles.reviewTextarea}
-        value={review}
-        onChange={(e) => setReview(e.target.value)}
-        placeholder="Write your feedback here..."
-      />
-
-      <button className={styles.saveBtn} onClick={handleSubmitRating}>
-        Submit Rating
+      <button 
+        className={styles.saveBtn} 
+        onClick={handleSubmit}
+        disabled={submitting}
+      >
+        {submitting ? "Submitting Reviews..." : "Submit Reviews"}
       </button>
     </div>
   );

@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-//wishlist controller - update
-
 use App\Models\Wishlist;
 use Illuminate\Http\Request;
 
@@ -21,7 +19,7 @@ class WishlistController extends Controller
 
     public function store(Request $request) {
         $request->validate([
-            'product_id' => 'required|exists:products,product_id', // <- use product_id column, not id
+            'product_id' => 'required|exists:products,product_id', 
         ]);
 
         $exists = Wishlist::where('user_id', $request->user()->id)
@@ -39,9 +37,7 @@ class WishlistController extends Controller
 
         return response()->json($item, 201);
     }
-
-
-    // Remove from wishlist
+    
     public function destroy($id)
     {
         $item = Wishlist::findOrFail($id);
@@ -50,7 +46,7 @@ class WishlistController extends Controller
         return response()->json(['message' => 'Removed from wishlist']);
     }
 
-    // Add this new method
+    
     public function removeByProduct(Request $request, $productId)
     {
         $deleted = Wishlist::where('user_id', $request->user()->id)
