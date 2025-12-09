@@ -41,40 +41,52 @@ export default function TrackOrderPage() {
 
     setOrder(txn);
     
+    // ✅ CRITICAL FIX: State Management
     if (txn.status === 'Delivered' || txn.status === 'Completed') {
+        // If DB says done, show full green immediately
         setCurrentStatusIndex(statuses.length - 1);
     } else {
+        // If DB says Pending, check local storage
         const saved = JSON.parse(localStorage.getItem(`track_${txn.id}`));
-        if (saved) {
+        
+        // Safety Check: If local storage says "finished" (index 3) 
+        // but DB says "Pending", ignore storage and restart animation.
+        if (saved && saved.statusIndex < statuses.length - 1) {
             setCurrentStatusIndex(saved.statusIndex);
+        } else {
+            setCurrentStatusIndex(0); // Force start at 0
         }
     }
   }, [transactions, transactionId]);
 
   useEffect(() => {
-    if (!order || isCancelled || currentStatusIndex === statuses.length - 1) return;
+    // Don't run animation if finished or cancelled
+    if (!order || isCancelled || currentStatusIndex >= statuses.length - 1) return;
 
     const interval = setInterval(() => {
       setCurrentStatusIndex((prev) => {
-        if (prev < statuses.length - 1) {
-          const next = prev + 1;
-          
-          localStorage.setItem(
-            `track_${order.id}`,
-            JSON.stringify({ statusIndex: next })
-          );
-
-          if (next === statuses.length - 1) {
-            handleDeliveryCompletion(order.id);
-          }
-
-          return next;
+        // Stop if we reach the end
+        if (prev >= statuses.length - 1) {
+          clearInterval(interval);
+          return prev;
         }
+
+        const next = prev + 1;
         
-        clearInterval(interval);
-        return prev;
+        // Save progress to storage
+        localStorage.setItem(
+          `track_${order.id}`,
+          JSON.stringify({ statusIndex: next })
+        );
+
+        // ✅ FIX: Only trigger backend update when hitting the FINAL step
+        if (next === statuses.length - 1) {
+          handleDeliveryCompletion(order.id);
+        }
+
+        return next;
       });
-    }, 5000); 
+    }, 2000); // 2 seconds per step for clear visualization
 
     return () => clearInterval(interval);
   }, [order, isCancelled, currentStatusIndex, token]);
@@ -82,12 +94,11 @@ export default function TrackOrderPage() {
   const handleBuyAgain = () => {
     clearCart();
     order.items.forEach((item) => {
-      // ✅ FIX: Added check to ensure product exists
       if (item.product) {
         addToCart({
           id: item.product.id,
           name: item.product.name,
-          price: item.product.price, // ✅ FIX: Use current product price, not order price
+          price: item.product.price, 
           image: item.product.image_url,
           quantity: item.quantity,
         });
@@ -96,7 +107,7 @@ export default function TrackOrderPage() {
     navigate("/checkout");
   };
 
-  if (!order) return <p>Order not found.</p>;
+  if (!order) return <p className={styles.trackOrderMainContainer}>Loading order...</p>;
 
   return (
     <div className={styles.trackOrderMainContainer}>
@@ -123,7 +134,14 @@ export default function TrackOrderPage() {
       <div className={styles.trackOrderCard}>
         <div className={styles.trackOrderStatus}>
           {statuses.map((status, index) => (
-            <div key={index} className={styles.statusStepContainer}>
+            <div 
+              key={index} 
+              // ✅ Apply 'completed' only to steps BEFORE the current one
+              // This triggers the line filling animation from left to right
+              className={`${styles.statusStepContainer} ${
+                index < currentStatusIndex ? styles.completed : ""
+              }`}
+            >
               <div
                 className={`${styles.statusStep} ${
                   index <= currentStatusIndex ? styles.active : ""
@@ -142,6 +160,7 @@ export default function TrackOrderPage() {
         </div>
 
         <div className={styles.trackOrderButtons}>
+          {/* Only show buttons when completely finished */}
           {currentStatusIndex === statuses.length - 1 && !isCancelled ? (
             <>
               {order.status !== 'Completed' && (

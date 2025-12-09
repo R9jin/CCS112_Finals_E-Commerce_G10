@@ -8,12 +8,11 @@
   overflow-x: auto;
 }
 
-/* === NEW: Order Items List Card === */
+/* === Order Items Card === */
 .orderItemsCard {
   background: #fff;
   padding: 20px;
   border-radius: 12px;
-  margin-bottom: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
@@ -55,13 +54,13 @@
   margin-top: 10px;
 }
 
-/* === Existing Tracking Card === */
+/* === Tracking Card === */
 .trackOrderCard {
   display: flex;
   align-items: center;
   background: #fff;
   border-radius: 12px;
-  padding: 20px 25px;
+  padding: 30px 25px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   gap: 30px;
   flex-wrap: wrap;
@@ -85,23 +84,69 @@
   position: relative;
 }
 
-.statusStep {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #ddd;
-  margin-bottom: 8px;
-  transition: background 0.3s;
+/* 1. Base Gray Line (Background) */
+.statusStepContainer::before {
+  content: '';
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  width: 100%;
+  height: 4px;
+  background-color: #e0e0e0;
+  z-index: 0;
+  transform: translateY(-50%);
 }
 
+/* 2. Animated Green Line (Overlay) */
+.statusStepContainer::after {
+  content: '';
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  width: 0%; /* Starts invisible */
+  height: 4px;
+  background-color: #4caf50;
+  z-index: 0;
+  transform: translateY(-50%);
+  transition: width 1s ease-in-out; /* Smooth fill */
+}
+
+/* Hide lines for the last element */
+.statusStepContainer:last-child::before,
+.statusStepContainer:last-child::after {
+  display: none;
+}
+
+/* 3. Trigger Green Line Fill */
+.statusStepContainer.completed::after {
+  width: 100%;
+}
+
+/* 4. The Node (Dot) */
+.statusStep {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #e0e0e0; /* Start Gray */
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 1; /* Above lines */
+  border: 2px solid #fff;
+  /* Delay color change so line arrives first */
+  transition: background-color 0.3s ease 1s, transform 0.3s ease 1s;
+}
+
+/* Active Node State */
 .statusStep.active {
-  background: #4caf50;
+  background-color: #4caf50; /* Turn Green */
+  transform: scale(1.3);
 }
 
 .statusLabel {
   font-size: 13px;
-  color: #555;
+  color: #999;
   text-align: center;
+  transition: color 0.3s ease 1s;
 }
 
 .statusLabel.active {
@@ -109,6 +154,7 @@
   font-weight: 600;
 }
 
+/* === Buttons === */
 .trackOrderButtons {
   display: flex;
   flex-direction: column;
@@ -127,40 +173,40 @@
 
 .trackOrderButtons button:hover {
   transform: translateY(-2px);
-  background-color: #f44336;
-  color: white;
 }
 
-.trackOrderButtons .cancelBtn {
+.cancelBtn {
   background: #fff;
   border: 1px solid #f44336;
   color: #f44336;
 }
 
-.trackOrderButtons .rateOrderBtn {
+.cancelBtn:hover {
+  background: #f44336 !important;
+  color: white !important;
+}
+
+.rateOrderBtn {
   background-color: #ff4b2b;
   color: white;
-  border: none;
 }
 
-.trackOrderButtons button:not(.cancelBtn):not(.rateOrderBtn) {
-  background: #fff;
-  border: 1px solid #ccc;
-  color: #333;
-}
-
-.trackOrderButtons button:not(.cancelBtn):not(.rateOrderBtn):hover {
-  background: #f44336;
-  color: white;
+.trackingBtn {
+  background: #f0f0f0;
+  color: #888;
+  cursor: default;
 }
 
 .cancelledText {
   color: #f44336;
   font-weight: bold;
-  margin-top: 10px;
+  position: absolute;
+  bottom: -30px;
+  left: 0;
+  width: 100%;
+  text-align: center;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .trackOrderMainContainer {
     overflow-x: auto;
