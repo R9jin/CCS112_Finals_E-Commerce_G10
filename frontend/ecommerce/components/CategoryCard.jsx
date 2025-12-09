@@ -1,7 +1,11 @@
 import { Link } from "react-router-dom";
 import styles from "../styles/CategoryCards.module.css";
 
+/**
+ * Component to display interactive cards for various food categories.
+ */
 function CategoryCards() {
+  // Array defining the food categories, their names, and image paths
   const categories = [
     { name: "Appetizers", img: `${process.env.PUBLIC_URL}/assets/appetizers/dynamite-lumpia.jpeg` },
     { name: "Main Course", img: `${process.env.PUBLIC_URL}/assets/mainCourse/chicken-adobo.jpeg` },
@@ -14,16 +18,18 @@ function CategoryCards() {
     <div className={styles.categoryContainer}>
       <h2 className={styles.categoryTitle}>CATEGORIES</h2>
       <div className={styles.categoryGrid}>
+        {/* Map through the categories array to render a card for each */}
         {categories.map((cat) => (
           <Link
             key={cat.name}
-            to={`/category#${cat.name.toLowerCase().replace(/\s+/g, '-')}`}
+            // Dynamic link: navigates to /category and uses a URL hash for scrolling/filtering
+            to={`/category#${cat.name.toLowerCase().replace(/\s+/g, '-')}`} 
             className={styles.categoryCard}
           >
             <div className={styles.imagePlaceholder}>
               <img src={cat.img} alt={cat.name} />
             </div>
-            <p>{cat.name}</p>
+            <p>{cat.name}</p> {/* Category name displayed below the image */}
           </Link>
         ))}
       </div>

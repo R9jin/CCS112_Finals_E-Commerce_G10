@@ -1,14 +1,22 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { login as apiLogin, updateUser as apiUpdateUser } from "../api/auth";
 
+// Create the Context object
 const AuthContext = createContext();
 
+/**
+ * Provides authentication state (isLoggedIn, currentUser, token) 
+ * and methods (login, logout, updateProfile) to the rest of the app.
+ */
 export function AuthProvider({ children }) {
+  // Authentication status state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // Stores the currently authenticated user object
   const [currentUser, setCurrentUser] = useState(null);
+  // Stores the JWT or access token
   const [token, setToken] = useState(null);
 
-  // Restore session from localStorage
+  // Effect runs once on mount to restore user session from browser storage
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("currentUser");
@@ -20,16 +28,18 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // Login function
+  // Handles user login via API
   const login = async (credentials) => {
     try {
-      const data = await apiLogin(credentials); // expects { user, token }
+      const data = await apiLogin(credentials); // Calls the API utility function
 
       if (data.token) {
+        // Update state
         setToken(data.token);
         setCurrentUser(data.user);
         setIsLoggedIn(true);
 
+        // Persist session to local storage
         localStorage.setItem("token", data.token);
         localStorage.setItem("currentUser", JSON.stringify(data.user));
 
@@ -45,7 +55,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Logout
+  // Clears user session from state and local storage
   const logout = () => {
     setToken(null);
     setCurrentUser(null);
@@ -54,12 +64,14 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("currentUser");
   };
 
+  // Handles updating the user profile via API
   const updateProfile = async (userData) => {
     try {
+      // Calls the API utility function using the current token
       const data = await apiUpdateUser(userData, token);
       
       if (data.success) {
-        // Update local state and storage
+        // Update local state and storage with the new user data
         setCurrentUser(data.user);
         localStorage.setItem("currentUser", JSON.stringify(data.user));
         return { success: true };
@@ -73,6 +85,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
+    // Provides state and functions to consumers
     <AuthContext.Provider
       value={{ isLoggedIn, currentUser, token, login, logout, updateProfile }}
     >
@@ -81,4 +94,5 @@ export function AuthProvider({ children }) {
   );
 }
 
+// Custom hook for convenient access to the auth context values
 export const useAuth = () => useContext(AuthContext);
