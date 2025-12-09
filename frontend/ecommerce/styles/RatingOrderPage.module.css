@@ -1,0 +1,92 @@
+.trackOrderMainContainer {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  font-family: Arial, sans-serif;
+}
+
+.trackOrderMainContainer h2 {
+  text-align: center;
+  color: #ff4b2b;
+  margin-bottom: 1.5rem;
+}
+
+/* New class for the item wrapper */
+.ratingItem {
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 20px;
+}
+
+.ratingItem p strong {
+  display: block;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+/* New class for the star container */
+.starContainer {
+  margin: 10px 0;
+}
+
+.star {
+  font-size: 1.8rem;
+  color: #464646;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-right: 5px;
+}
+
+.star.active {
+  color: #ff4b2b;
+  transform: scale(1.2);
+}
+
+.reviewTextarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #ff4b2b;
+  resize: vertical;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.saveBtn {
+  display: block;
+  width: 100%;
+  padding: 12px 0;
+  background-color: #ff4b2b;
+  color: #fff;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.saveBtn:hover {
+  background-color: #e03e1f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Disabled state */
+.saveBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+@media (max-width: 480px) {
+  .trackOrderMainContainer {
+    padding: 1rem;
+    margin: 1rem;
+  }
+}

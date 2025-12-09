@@ -1,0 +1,139 @@
+.orderContainer {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 1rem;
+  overflow-x: auto;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.transactionInfo p {
+  margin: 0.2rem 0;
+  font-size: 0.95rem;
+}
+
+.statusCompleted {
+  color: green;
+  font-weight: bold;
+}
+
+.statusDelivered {
+  color: #2196f3;
+  font-weight: bold;
+}
+
+.statusDefault {
+  color: orange;
+  font-weight: bold;
+}
+
+.transactionTotal {
+  margin-top: 0.5rem;
+  font-weight: bold;
+  color: #111;
+}
+
+.cartItem {
+  margin-bottom: 2rem;
+}
+
+.orderTable {
+  width: 100%;
+  min-width: 700px;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.orderTable th {
+  background-color: #ff4b2b;
+  color: white;
+  font-weight: bold;
+  padding: 0.75rem;
+  text-align: left;
+  border: 1px solid #ddd;
+}
+
+.orderTable td {
+  border: 1px solid #ddd;
+  padding: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.orderItemImg {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #ff4b2b;
+}
+
+/* Button Group Wrapper */
+.buttonGroup {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.trackOrderBtn {
+  background-color: #ff4b2b;
+  color: white;
+  padding: 10px 15px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.trackOrderBtn:hover {
+  background-color: #ff4b2b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.buyAgainBtn {
+  background-color: #4caf50;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.buyAgainBtn:hover {
+  background-color: #3e8e41;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.rateOrderBtn {
+  background-color: #2196f3;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.rateOrderBtn:hover {
+  background-color: #1976d2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+@media (max-width: 768px) {
+  .trackOrderBtn,
+  .buyAgainBtn,
+  .rateOrderBtn {
+    width: 100%;
+    padding: 12px 0;
+    font-size: 1rem;
+  }
+}
